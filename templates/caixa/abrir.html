@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Abrir Caixa{% endblock %}
+{% block page_title %}💰 Abrir Caixa{% endblock %}
+{% block topbar_actions %}<a href="{% url 'caixa:lista' %}" class="btn btn-secondary">← Voltar</a>{% endblock %}
+{% block content %}
+<div style="max-width:400px">
+<div class="card">
+    <div class="card-title" style="margin-bottom:8px">Abrir Caixa do Dia</div>
+    <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px">Informe o valor inicial (troco disponível no caixa).</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>Valor Inicial (R$)</label>
+            <input type="number" name="valor_inicial" class="form-control" step="0.01" min="0" value="0" required placeholder="0,00">
+        </div>
+        <button type="submit" class="btn btn-primary w-100">✅ Abrir Caixa</button>
+    </form>
+</div>
+</div>
+{% endblock %}

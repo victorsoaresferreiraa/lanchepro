@@ -1,0 +1,46 @@
+# ============================================================
+# DOCKER COMPOSE — Orquestra múltiplos containers
+# ============================================================
+# Enquanto o Dockerfile define UM container,
+# o Docker Compose define VÁRIOS containers trabalhando juntos.
+#
+# Para rodar: docker compose up -d
+# Para parar: docker compose down
+# Ver logs:   docker compose logs -f
+# ============================================================
+
+version: '3.9'
+
+services:
+  # ---- Aplicação Django ----
+  web:
+    build: .
+    ports:
+      - "8000:8000"    # computador:container
+    volumes:
+      # Persiste o banco de dados SQLite e uploads fora do container
+      - ./data:/app/data
+      - ./media:/app/media
+    environment:
+      - SECRET_KEY=troca-esta-chave-em-producao-use-algo-longo-e-aleatorio
+      - DEBUG=False
+      - ALLOWED_HOSTS=localhost,127.0.0.1
+      - DJANGO_SUPERUSER_USERNAME=admin
+      - DJANGO_SUPERUSER_PASSWORD=admin123
+      - DJANGO_SUPERUSER_EMAIL=admin@lanchopro.com
+    restart: unless-stopped   # Reinicia automaticamente se cair
+
+# ============================================================
+# Para produção com PostgreSQL, adicione:
+#
+#   db:
+#     image: postgres:16-alpine
+#     environment:
+#       POSTGRES_DB: lanchopro
+#       POSTGRES_USER: lanchopro
+#       POSTGRES_PASSWORD: senha_segura
+#     volumes:
+#       - postgres_data:/var/lib/postgresql/data
+#
+# E no settings.py mude DATABASES para usar psycopg2
+# ============================================================

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Clientes{% endblock %}
+{% block page_title %}👥 Clientes e Fiado{% endblock %}
+{% block topbar_actions %}
+<a href="{% url 'clientes:nova_conta' %}" class="btn btn-primary">+ Lançar Fiado</a>
+{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">Clientes com Fiado</div>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Cliente</th><th>Telefone</th><th>Total Devido</th><th>Ações</th></tr></thead>
+            <tbody>
+            {% for c in clientes %}
+            <tr>
+                <td><div style="font-weight:500">{{ c.nome }}</div></td>
+                <td style="color:var(--text-muted)">{{ c.telefone|default:"—" }}</td>
+                <td>
+                    {% if c.divida_total > 0 %}
+                    <span style="font-weight:700;color:var(--warning)">R$ {{ c.divida_total|floatformat:2 }}</span>
+                    {% else %}
+                    <span class="badge badge-success">Quitado ✓</span>
+                    {% endif %}
+                </td>
+                <td><a href="{% url 'clientes:detalhe' c.pk %}" class="btn btn-secondary btn-sm">Ver Contas</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-muted)">
+                <div style="font-size:40px;margin-bottom:12px">👥</div>
+                <div>Nenhum cliente cadastrado.</div>
+                <a href="{% url 'clientes:nova_conta' %}" class="btn btn-primary" style="margin-top:12px">Lançar primeiro fiado</a>
+            </td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

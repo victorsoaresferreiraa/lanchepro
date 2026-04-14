@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Recibo #{{ venda.numero }}{% endblock %}
+{% block page_title %}🧾 Recibo da Venda{% endblock %}
+{% block topbar_actions %}
+<button onclick="window.print()" class="btn btn-secondary">🖨️ Imprimir</button>
+<a href="{% url 'vendas:pdv' %}" class="btn btn-primary">+ Nova Venda</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+@media print {
+    .sidebar, .topbar, .topbar-actions, .no-print { display:none!important; }
+    .main { margin-left:0!important; }
+    .content { padding:0!important; }
+    .recibo { max-width:300px; margin:0 auto; }
+}
+.recibo { max-width:380px; }
+.recibo-header { text-align:center; margin-bottom:24px; }
+.recibo-logo { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; color:var(--primary); }
+.divider { border:none; border-top:1px dashed var(--border); margin:16px 0; }
+.recibo-row { display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px; }
+.recibo-row.total { font-weight:700; font-size:16px; padding-top:8px; }
+.success-banner { background:rgba(46,204,113,.12); border:1px solid rgba(46,204,113,.3); border-radius:10px; padding:16px; text-align:center; margin-bottom:20px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="success-banner no-print">
+    <div style="font-size:32px;margin-bottom:8px">✅</div>
+    <div style="font-weight:700;color:var(--success);font-size:16px">Venda realizada com sucesso!</div>
+    <div style="color:var(--text-muted);font-size:13px;margin-top:4px">Venda #{{ venda.numero }} — {{ venda.criado_em|date:"d/m/Y H:i" }}</div>
+</div>
+
+<div class="card recibo">
+    <div class="recibo-header">
+        <div class="recibo-logo">🍔 LanchoPro</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Recibo de Venda</div>
+        <div style="font-size:12px;color:var(--text-muted)">#{{ venda.numero }} — {{ venda.criado_em|date:"d/m/Y H:i" }}</div>
+    </div>
+
+    {% if venda.cliente_nome %}
+    <div style="margin-bottom:12px;padding:10px;background:var(--bg3);border-radius:8px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Cliente</div>
+        <div style="font-weight:600">{{ venda.cliente_nome }}</div>
+        {% if venda.cliente_telefone %}<div style="font-size:12px;color:var(--text-muted)">{{ venda.cliente_telefone }}</div>{% endif %}
+    </div>
+    {% endif %}
+
+    <hr class="divider">
+
+    {% for item in venda.itens.all %}
+    <div class="recibo-row">
+        <span>{{ item.produto_nome }} <span style="color:var(--text-muted)">x{{ item.quantidade }}</span></span>
+        <span>R$ {{ item.total|floatformat:2 }}</span>
+    </div>
+    {% endfor %}
+
+    <hr class="divider">
+
+    <div class="recibo-row"><span style="color:var(--text-muted)">Subtotal</span><span>R$ {{ venda.subtotal|floatformat:2 }}</span></div>
+    {% if venda.desconto > 0 %}
+    <div class="recibo-row"><span style="color:var(--text-muted)">Desconto</span><span style="color:var(--danger)">- R$ {{ venda.desconto|floatformat:2 }}</span></div>
+    {% endif %}
+    <div class="recibo-row total">
+        <span>TOTAL</span>
+        <span style="color:var(--primary)">R$ {{ venda.total|floatformat:2 }}</span>
+    </div>
+    <div class="recibo-row" style="margin-top:8px">
+        <span style="color:var(--text-muted)">Pagamento</span>
+        <span class="badge {% if venda.tipo_pagamento == 'FIADO' %}badge-warning{% else %}badge-success{% endif %}">{{ venda.get_tipo_pagamento_display }}</span>
+    </div>
+    {% if venda.troco > 0 %}
+    <div class="recibo-row"><span style="color:var(--text-muted)">Troco</span><span>R$ {{ venda.troco|floatformat:2 }}</span></div>
+    {% endif %}
+
+    <hr class="divider">
+    <div style="text-align:center;font-size:11px;color:var(--text-muted)">Operador: {{ venda.operador.username }}</div>
+    <div style="text-align:center;font-size:11px;color:var(--text-muted);margin-top:4px">Obrigado pela preferência! 🙏</div>
+</div>
+{% endblock %}

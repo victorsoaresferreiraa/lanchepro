@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LanchoPro — Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary:#FF6B2C; --bg:#0F0F13; --bg2:#17171D; --bg3:#1E1E27; --border:rgba(255,255,255,0.08); --text:#F0EEF5; --muted:#8884A0; }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+        .login-left{flex:1;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;padding:60px;position:relative;overflow:hidden}
+        .login-left::before{content:'';position:absolute;top:-100px;left:-100px;width:400px;height:400px;background:radial-gradient(circle,rgba(255,107,44,0.12) 0%,transparent 70%);pointer-events:none}
+        .brand{display:flex;align-items:center;gap:14px;margin-bottom:60px}
+        .brand-icon{width:48px;height:48px;background:var(--primary);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px}
+        .brand-name{font-family:'Syne',sans-serif;font-size:24px;font-weight:800}
+        .brand-name span{color:var(--primary)}
+        .tagline{font-family:'Syne',sans-serif;font-size:40px;font-weight:800;line-height:1.1;letter-spacing:-1.5px;margin-bottom:20px}
+        .tagline em{color:var(--primary);font-style:normal}
+        .sub{color:var(--muted);font-size:15px;line-height:1.6;max-width:380px}
+        .features{margin-top:40px;display:flex;flex-direction:column;gap:14px}
+        .feature{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:14px}
+        .dot{width:8px;height:8px;border-radius:50%;background:var(--primary);flex-shrink:0}
+        .login-right{width:440px;display:flex;align-items:center;justify-content:center;padding:40px}
+        .login-box{width:100%;max-width:360px}
+        .login-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:700;margin-bottom:6px}
+        .login-sub{color:var(--muted);font-size:14px;margin-bottom:32px}
+        .form-group{margin-bottom:16px}
+        label{display:block;font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+        input{width:100%;padding:11px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .15s}
+        input:focus{border-color:var(--primary)}
+        .btn-login{width:100%;padding:13px;background:var(--primary);color:#fff;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;transition:background .15s}
+        .btn-login:hover{background:#E55A1C}
+        .err{background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.3);border-radius:8px;padding:10px 14px;color:#E74C3C;font-size:13px;margin-bottom:16px}
+        @media(max-width:768px){.login-left{display:none}.login-right{width:100%}}
+    </style>
+</head>
+<body>
+<div class="login-left">
+    <div class="brand"><div class="brand-icon">🍔</div><div class="brand-name">Lancho<span>Pro</span></div></div>
+    <div class="tagline">Gestão <em>inteligente</em><br>para sua lanchonete</div>
+    <p class="sub">Sistema completo de vendas, estoque, caixa e clientes. Acessível de qualquer dispositivo.</p>
+    <div class="features">
+        <div class="feature"><div class="dot"></div>Dashboard com métricas em tempo real</div>
+        <div class="feature"><div class="dot"></div>Ponto de venda rápido e intuitivo</div>
+        <div class="feature"><div class="dot"></div>Controle de estoque com alertas automáticos</div>
+        <div class="feature"><div class="dot"></div>Gestão de fiado e clientes</div>
+        <div class="feature"><div class="dot"></div>API REST para integrações futuras</div>
+    </div>
+</div>
+<div class="login-right">
+    <div class="login-box">
+        <div class="login-title">Bem-vindo de volta 👋</div>
+        <div class="login-sub">Entre com suas credenciais para acessar</div>
+        {% if form.errors %}<div class="err">❌ Usuário ou senha incorretos.</div>{% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group"><label>Usuário</label><input type="text" name="username" placeholder="seu_usuario" autofocus required></div>
+            <div class="form-group"><label>Senha</label><input type="password" name="password" placeholder="••••••••" required></div>
+            <input type="hidden" name="next" value="{{ next }}">
+            <button type="submit" class="btn-login">Entrar no sistema →</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

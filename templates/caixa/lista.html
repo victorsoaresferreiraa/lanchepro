@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Caixa{% endblock %}
+{% block page_title %}💰 Controle de Caixa{% endblock %}
+{% block topbar_actions %}
+{% if not caixa_aberto %}
+<a href="{% url 'caixa:abrir' %}" class="btn btn-primary">Abrir Caixa</a>
+{% else %}
+<a href="{% url 'caixa:sangria' %}" class="btn btn-secondary">💸 Sangria</a>
+<a href="{% url 'caixa:fechar' %}" class="btn btn-danger">🔒 Fechar Caixa</a>
+{% endif %}
+{% endblock %}
+{% block content %}
+{% if caixa_aberto %}
+<div class="card" style="margin-bottom:16px;border-color:rgba(46,204,113,.3)">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+        <div>
+            <div style="font-size:12px;color:var(--success);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">● Caixa Aberto</div>
+            <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:22px">Saldo Esperado: R$ {{ caixa_aberto.saldo_esperado|floatformat:2 }}</div>
+            <div style="color:var(--text-muted);font-size:13px">Aberto {{ caixa_aberto.data_abertura|date:"d/m H:i" }} — {{ caixa_aberto.operador.username }}</div>
+        </div>
+        <div style="display:flex;gap:20px">
+            <div style="text-align:center"><div style="font-size:11px;color:var(--text-muted)">Inicial</div><div style="font-weight:700">R$ {{ caixa_aberto.valor_inicial|floatformat:2 }}</div></div>
+            <div style="text-align:center"><div style="font-size:11px;color:var(--success)">Vendas</div><div style="font-weight:700;color:var(--success)">+ R$ {{ caixa_aberto.valor_vendas|floatformat:2 }}</div></div>
+            <div style="text-align:center"><div style="font-size:11px;color:var(--danger)">Sangrias</div><div style="font-weight:700;color:var(--danger)">- R$ {{ caixa_aberto.valor_sangria|floatformat:2 }}</div></div>
+        </div>
+    </div>
+</div>
+{% endif %}
+<div class="card">
+    <div class="card-header"><div class="card-title">Histórico de Caixas</div></div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Data Abertura</th><th>Operador</th><th>Valor Inicial</th><th>Vendas</th><th>Sangria</th><th>Valor Final</th><th>Status</th></tr></thead>
+            <tbody>
+            {% for c in caixas %}
+            <tr>
+                <td>{{ c.data_abertura|date:"d/m/Y H:i" }}</td>
+                <td>{{ c.operador.username|default:"—" }}</td>
+                <td>R$ {{ c.valor_inicial|floatformat:2 }}</td>
+                <td style="color:var(--success)">R$ {{ c.valor_vendas|floatformat:2 }}</td>
+                <td style="color:var(--danger)">R$ {{ c.valor_sangria|floatformat:2 }}</td>
+                <td><strong>R$ {{ c.valor_final|floatformat:2 }}</strong></td>
+                <td><span class="badge {% if c.status == 'ABERTO' %}badge-success{% else %}badge-muted{% endif %}">{{ c.status }}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted)">Nenhum caixa registrado.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

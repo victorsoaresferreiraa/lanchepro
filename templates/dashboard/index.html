@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block topbar_actions %}
+<span style="font-size:12px;color:var(--text-muted)">
+    {% if caixa_aberto %}
+    <span style="color:var(--success)">● Caixa aberto</span> desde {{ caixa_aberto.data_abertura|date:"H:i" }}
+    {% else %}
+    <span style="color:var(--danger)">● Caixa fechado</span>
+    — <a href="{% url 'caixa:abrir' %}" style="color:var(--primary)">Abrir agora</a>
+    {% endif %}
+</span>
+<a href="{% url 'vendas:pdv' %}" class="btn btn-primary">🛒 Nova Venda</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.chart-bar-wrap { display:flex; flex-direction:column; gap:8px; }
+.chart-row { display:flex; align-items:center; gap:10px; font-size:12px; }
+.chart-label { width:40px; color:var(--text-muted); text-align:right; flex-shrink:0; }
+.chart-bar-bg { flex:1; background:var(--bg3); border-radius:99px; height:20px; overflow:hidden; }
+.chart-bar-fill { height:100%; background:linear-gradient(90deg, var(--primary), var(--primary-light,#FF8C55)); border-radius:99px; transition:width 1s cubic-bezier(.4,0,.2,1); display:flex; align-items:center; justify-content:flex-end; padding-right:8px; }
+.chart-val { font-size:10px; color:white; font-weight:600; white-space:nowrap; }
+.chart-val-out { width:60px; font-size:11px; font-weight:600; color:var(--text-muted); text-align:left; }
+.top-item { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); }
+.top-item:last-child { border-bottom:none; }
+.top-rank { width:24px; height:24px; border-radius:6px; background:var(--bg3); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--text-muted); flex-shrink:0; }
+.top-rank.gold { background:rgba(243,156,18,.15); color:var(--warning); }
+.alert-item { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); }
+.alert-item:last-child { border-bottom:none; }
+.empty-state { text-align:center; padding:40px 20px; color:var(--text-muted); }
+.empty-state .icon { font-size:40px; margin-bottom:12px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- MÉTRICAS PRINCIPAIS -->
+<div class="grid grid-4" style="margin-bottom:20px">
+    <div class="metric-card orange">
+        <div class="metric-icon">💰</div>
+        <div class="metric-label">Vendas Hoje</div>
+        <div class="metric-value">R$ {{ vendas_hoje.total|default:"0"|floatformat:2 }}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:6px">{{ vendas_hoje.count|default:"0" }} transações</div>
+    </div>
+    <div class="metric-card green">
+        <div class="metric-icon">📅</div>
+        <div class="metric-label">Vendas do Mês</div>
+        <div class="metric-value">R$ {{ vendas_mes.total|default:"0"|floatformat:2 }}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:6px">{{ vendas_mes.count|default:"0" }} vendas</div>
+    </div>
+    <div class="metric-card blue">
+        <div class="metric-icon">🎯</div>
+        <div class="metric-label">Ticket Médio</div>
+        <div class="metric-value">R$ {{ ticket_medio|floatformat:2 }}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:6px">por venda este mês</div>
+    </div>
+    <div class="metric-card red">
+        <div class="metric-icon">📋</div>
+        <div class="metric-label">Fiado em Aberto</div>
+        <div class="metric-value">R$ {{ total_fiado|floatformat:2 }}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:6px">{{ contas_abertas_count }} conta(s)</div>
+    </div>
+</div>
+
+<!-- LINHA 2: GRÁFICO + TOP PRODUTOS + ALERTAS -->
+<div class="grid" style="grid-template-columns:1fr 300px 300px;gap:16px;margin-bottom:20px">
+
+    <!-- Gráfico Últimos 7 Dias -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">📈 Vendas — Últimos 7 Dias</div>
+        </div>
+        {% if vendas_7dias %}
+        {% with max_val=vendas_7dias.0.total %}
+        <div class="chart-bar-wrap" id="chartWrap"></div>
+        <script>
+            const dados = {{ vendas_7dias|safe }};
+            const maxVal = Math.max(...dados.map(d => d.total), 1);
+            const wrap = document.getElementById('chartWrap');
+            dados.forEach(d => {
+                const pct = maxVal > 0 ? (d.total / maxVal * 100) : 0;
+                wrap.innerHTML += `
+                <div class="chart-row">
+                    <div class="chart-label">${d.dia}</div>
+                    <div class="chart-bar-bg">
+                        <div class="chart-bar-fill" style="width:${pct}%">
+                            ${d.total > 0 ? `<span class="chart-val">R$${d.total.toFixed(0)}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="chart-val-out">${d.total > 0 ? 'R$ '+d.total.toFixed(2) : '—'}</div>
+                </div>`;
+            });
+        </script>
+        {% endwith %}
+        {% else %}
+        <div class="empty-state"><div class="icon">📊</div><div>Nenhuma venda ainda</div></div>
+        {% endif %}
+    </div>
+
+    <!-- Top 5 Produtos -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">🏆 Top Produtos</div>
+            <span style="font-size:11px;color:var(--text-muted)">Este mês</span>
+        </div>
+        {% if top_produtos %}
+        <div>
+            {% for p in top_produtos %}
+            <div class="top-item">
+                <div style="display:flex;align-items:center;gap:10px">
+                    <div class="top-rank {% if forloop.first %}gold{% endif %}">{{ forloop.counter }}</div>
+                    <div>
+                        <div style="font-size:13px;font-weight:500">{{ p.produto_nome }}</div>
+                        <div style="font-size:11px;color:var(--text-muted)">{{ p.total_qtd }} un vendidas</div>
+                    </div>
+                </div>
+                <div style="font-size:13px;font-weight:600;color:var(--success)">R$ {{ p.total_valor|floatformat:2 }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state"><div class="icon">🛒</div><div>Sem vendas este mês</div></div>
+        {% endif %}
+    </div>
+
+    <!-- Alertas de Estoque -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">⚠️ Estoque Baixo</div>
+            {% if produtos_alerta %}<span class="badge badge-danger">{{ produtos_alerta|length }}</span>{% endif %}
+        </div>
+        {% if produtos_alerta %}
+        <div>
+            {% for p in produtos_alerta %}
+            <div class="alert-item">
+                <div>
+                    <div style="font-size:13px;font-weight:500">{{ p.nome }}</div>
+                    <div style="font-size:11px;color:var(--text-muted)">Mín: {{ p.estoque_minimo }} un</div>
+                </div>
+                <div style="text-align:right">
+                    <div style="font-size:16px;font-weight:700;color:var(--danger)">{{ p.quantidade }}</div>
+                    <div style="font-size:10px;color:var(--text-muted)">restantes</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <a href="{% url 'estoque:lista' %}" class="btn btn-secondary btn-sm w-100" style="margin-top:12px">Ver estoque completo</a>
+        {% else %}
+        <div class="empty-state"><div class="icon">✅</div><div>Estoque em dia!</div></div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- LINHA 3: INFO RÁPIDAS -->
+<div class="grid grid-3">
+    <div class="card">
+        <div class="card-title" style="margin-bottom:12px">💼 Situação do Caixa</div>
+        {% if caixa_aberto %}
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <span style="color:var(--text-muted)">Valor inicial</span>
+            <span>R$ {{ caixa_aberto.valor_inicial|floatformat:2 }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <span style="color:var(--text-muted)">Vendas no caixa</span>
+            <span style="color:var(--success)">+ R$ {{ caixa_aberto.valor_vendas|floatformat:2 }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <span style="color:var(--text-muted)">Sangrias</span>
+            <span style="color:var(--danger)">- R$ {{ caixa_aberto.valor_sangria|floatformat:2 }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border);font-weight:700">
+            <span>Saldo esperado</span>
+            <span style="color:var(--primary)">R$ {{ caixa_aberto.saldo_esperado|floatformat:2 }}</span>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px">
+            <a href="{% url 'caixa:sangria' %}" class="btn btn-secondary btn-sm" style="flex:1">Sangria</a>
+            <a href="{% url 'caixa:fechar' %}" class="btn btn-danger btn-sm" style="flex:1">Fechar</a>
+        </div>
+        {% else %}
+        <div class="empty-state"><div class="icon">🔒</div><div>Caixa fechado</div></div>
+        <a href="{% url 'caixa:abrir' %}" class="btn btn-primary w-100" style="margin-top:12px">Abrir Caixa</a>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-title" style="margin-bottom:12px">📊 Resumo do Sistema</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="color:var(--text-muted)">Produtos cadastrados</span>
+                <span class="badge badge-info">{{ total_produtos }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="color:var(--text-muted)">Estoque baixo</span>
+                <span class="badge {% if produtos_alerta %}badge-danger{% else %}badge-success{% endif %}">{{ produtos_alerta|length }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="color:var(--text-muted)">Contas em aberto</span>
+                <span class="badge {% if contas_abertas_count %}badge-warning{% else %}badge-success{% endif %}">{{ contas_abertas_count }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="color:var(--text-muted)">Total de fiado</span>
+                <span style="font-weight:600;color:{% if total_fiado > 0 %}var(--warning){% else %}var(--success){% endif %}">R$ {{ total_fiado|floatformat:2 }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title" style="margin-bottom:12px">⚡ Atalhos Rápidos</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+            <a href="{% url 'vendas:pdv' %}" class="btn btn-primary">🛒 Nova Venda</a>
+            <a href="{% url 'estoque:criar' %}" class="btn btn-secondary">📦 Novo Produto</a>
+            <a href="{% url 'clientes:nova_conta' %}" class="btn btn-secondary">📋 Lançar Fiado</a>
+            <a href="{% url 'vendas:historico' %}" class="btn btn-secondary">📈 Ver Relatório</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

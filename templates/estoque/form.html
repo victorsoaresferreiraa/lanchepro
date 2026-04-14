@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+{% block topbar_actions %}
+<a href="{% url 'estoque:lista' %}" class="btn btn-secondary">← Voltar ao Estoque</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:600px">
+    <div class="card">
+        <div class="card-header"><div class="card-title">{{ titulo }}</div></div>
+        <form method="post">
+            {% csrf_token %}
+            <div class="grid grid-2">
+                <div class="form-group" style="grid-column:span 2">
+                    <label>Nome do Produto *</label>
+                    {{ form.nome }}
+                </div>
+                <div class="form-group">
+                    <label>Categoria</label>
+                    {{ form.categoria }}
+                </div>
+                <div class="form-group">
+                    <label>Quantidade Inicial</label>
+                    {{ form.quantidade }}
+                </div>
+                <div class="form-group">
+                    <label>Preço de Venda (R$) *</label>
+                    {{ form.preco }}
+                </div>
+                <div class="form-group">
+                    <label>Preço de Custo (R$)</label>
+                    {{ form.preco_custo }}
+                    <small style="color:var(--text-muted);font-size:11px">Opcional — usado para calcular margem de lucro</small>
+                </div>
+                <div class="form-group">
+                    <label>Estoque Mínimo (alerta)</label>
+                    {{ form.estoque_minimo }}
+                </div>
+                <div class="form-group" style="grid-column:span 2">
+                    <label>Descrição</label>
+                    {{ form.descricao }}
+                </div>
+            </div>
+            {% if form.errors %}
+            <div class="alert alert-error">
+                ❌ Corrija os erros abaixo:
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %} <div>{{ field }}: {{ error }}</div>{% endfor %}
+                {% endfor %}
+            </div>
+            {% endif %}
+            <div style="display:flex;gap:10px;margin-top:8px">
+                <button type="submit" class="btn btn-primary">💾 Salvar Produto</button>
+                <a href="{% url 'estoque:lista' %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

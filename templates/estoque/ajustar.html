@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Ajustar Estoque{% endblock %}
+{% block page_title %}📦 Ajustar Estoque{% endblock %}
+{% block topbar_actions %}<a href="{% url 'estoque:lista' %}" class="btn btn-secondary">← Voltar</a>{% endblock %}
+{% block content %}
+<div style="max-width:400px">
+<div class="card">
+<div class="card-header"><div class="card-title">{{ produto.nome }}</div><span class="badge badge-info">{{ produto.quantidade }} em estoque</span></div>
+<form method="post">
+{% csrf_token %}
+<div class="form-group">
+<label>Operação</label>
+<select name="tipo" class="form-select">
+<option value="adicionar">➕ Adicionar ao estoque (entrada)</option>
+<option value="remover">➖ Remover do estoque (saída/perda)</option>
+</select>
+</div>
+<div class="form-group">
+<label>Quantidade</label>
+<input type="number" name="quantidade" class="form-control" min="1" value="1" required>
+</div>
+<button type="submit" class="btn btn-primary w-100">Aplicar Ajuste</button>
+</form>
+</div>
+</div>
+{% endblock %}

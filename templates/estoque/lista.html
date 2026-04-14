@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Estoque{% endblock %}
+{% block page_title %}📦 Estoque{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'estoque:criar' %}" class="btn btn-primary">+ Novo Produto</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.filtros { display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+.stock-bar { width:60px; height:6px; background:var(--bg3); border-radius:99px; overflow:hidden; }
+.stock-fill { height:100%; border-radius:99px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Filtros -->
+<div class="filtros">
+    <form method="get" style="display:flex;gap:10px;flex:1;flex-wrap:wrap">
+        <input type="text" name="q" value="{{ busca }}" class="form-control" placeholder="🔍 Buscar produto..." style="flex:1;min-width:200px">
+        <select name="categoria" class="form-select" style="width:160px">
+            <option value="">Todas categorias</option>
+            {% for cat in categorias %}
+            <option value="{{ cat.id }}" {% if categoria_selecionada == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.nome }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-secondary">Filtrar</button>
+        {% if busca or categoria_selecionada %}<a href="{% url 'estoque:lista' %}" class="btn btn-secondary">✕ Limpar</a>{% endif %}
+    </form>
+</div>
+
+{% if alertas_estoque %}
+<div class="alert alert-warning" style="margin-bottom:16px">
+    ⚠️ <strong>{{ alertas_estoque }} produto(s)</strong> com estoque abaixo do mínimo! Verifique os itens marcados em vermelho.
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">Produtos Cadastrados</div>
+        <span style="font-size:12px;color:var(--text-muted)">{{ total_produtos }} produto(s)</span>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Produto</th>
+                    <th>Categoria</th>
+                    <th style="text-align:center">Estoque</th>
+                    <th style="text-align:center">Mínimo</th>
+                    <th>Preço Venda</th>
+                    <th>Preço Custo</th>
+                    <th>Margem</th>
+                    <th style="text-align:right">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in produtos %}
+                <tr>
+                    <td>
+                        <div style="font-weight:500">{{ p.nome }}</div>
+                        {% if p.descricao %}<div style="font-size:11px;color:var(--text-muted)">{{ p.descricao|truncatechars:40 }}</div>{% endif %}
+                    </td>
+                    <td>
+                        {% if p.categoria %}
+                        <span class="badge badge-muted">{{ p.categoria.nome }}</span>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td style="text-align:center">
+                        <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+                            <span style="font-weight:700;font-size:16px;color:{% if p.estoque_baixo %}var(--danger){% else %}var(--text){% endif %}">
+                                {{ p.quantidade }}
+                            </span>
+                            <div class="stock-bar">
+                                <div class="stock-fill" style="width:{% widthratio p.quantidade p.estoque_minimo|add:5 100 %}%;background:{% if p.estoque_baixo %}var(--danger){% elif p.quantidade > p.estoque_minimo|add:5 %}var(--success){% else %}var(--warning){% endif %}"></div>
+                            </div>
+                            {% if p.estoque_baixo %}<span style="font-size:9px;color:var(--danger);font-weight:700">BAIXO</span>{% endif %}
+                        </div>
+                    </td>
+                    <td style="text-align:center;color:var(--text-muted)">{{ p.estoque_minimo }}</td>
+                    <td><strong>R$ {{ p.preco|floatformat:2 }}</strong></td>
+                    <td style="color:var(--text-muted)">
+                        {% if p.preco_custo %}R$ {{ p.preco_custo|floatformat:2 }}{% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if p.margem_lucro %}
+                        <span class="badge {% if p.margem_lucro >= 30 %}badge-success{% elif p.margem_lucro >= 10 %}badge-warning{% else %}badge-danger{% endif %}">
+                            {{ p.margem_lucro|floatformat:0 }}%
+                        </span>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td style="text-align:right">
+                        <div style="display:flex;gap:6px;justify-content:flex-end">
+                            <a href="{% url 'estoque:ajustar' p.pk %}" class="btn btn-secondary btn-sm" title="Ajustar estoque">📦</a>
+                            <a href="{% url 'estoque:editar' p.pk %}" class="btn btn-secondary btn-sm">✏️</a>
+                            <a href="{% url 'estoque:excluir' p.pk %}" class="btn btn-secondary btn-sm" title="Remover">🗑️</a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted)">
+                        <div style="font-size:40px;margin-bottom:12px">📦</div>
+                        <div>Nenhum produto encontrado.</div>
+                        <a href="{% url 'estoque:criar' %}" class="btn btn-primary" style="margin-top:12px">Cadastrar primeiro produto</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

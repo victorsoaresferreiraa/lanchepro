@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Registrar Pagamento{% endblock %}
+{% block page_title %}💳 Registrar Pagamento{% endblock %}
+{% block topbar_actions %}<a href="{% url 'clientes:detalhe' conta.cliente.pk %}" class="btn btn-secondary">← Voltar</a>{% endblock %}
+{% block content %}
+<div style="max-width:420px">
+<div class="card" style="margin-bottom:16px">
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Cliente</div>
+    <div style="font-weight:700;font-size:16px">{{ conta.cliente.nome }}</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-top:8px">{{ conta.descricao }}</div>
+    <div style="display:flex;gap:16px;margin-top:12px">
+        <div><div style="font-size:11px;color:var(--text-muted)">Total</div><div style="font-weight:700">R$ {{ conta.total|floatformat:2 }}</div></div>
+        <div><div style="font-size:11px;color:var(--success)">Já pago</div><div style="font-weight:700;color:var(--success)">R$ {{ conta.valor_pago|floatformat:2 }}</div></div>
+        <div><div style="font-size:11px;color:var(--warning)">Saldo</div><div style="font-weight:700;color:var(--warning)">R$ {{ conta.saldo_devedor|floatformat:2 }}</div></div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-title" style="margin-bottom:16px">Registrar Pagamento</div>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>Valor Pago (R$)</label>
+            <input type="number" name="valor" class="form-control" step="0.01" min="0.01" value="{{ conta.saldo_devedor }}" required>
+            <small style="color:var(--text-muted);font-size:11px">Deixe o valor do saldo para quitar completamente.</small>
+        </div>
+        <button type="submit" class="btn btn-success w-100">✅ Confirmar Pagamento</button>
+    </form>
+</div>
+</div>
+{% endblock %}

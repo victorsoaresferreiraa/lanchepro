@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Nova Conta{% endblock %}
+{% block page_title %}📋 Lançar Fiado{% endblock %}
+{% block topbar_actions %}<a href="{% url 'clientes:lista' %}" class="btn btn-secondary">← Voltar</a>{% endblock %}
+{% block content %}
+<div style="max-width:520px">
+<div class="card">
+<div class="card-title" style="margin-bottom:20px">Nova Conta em Aberto (Fiado)</div>
+<form method="post">
+{% csrf_token %}
+<div class="form-group">
+<label>Cliente</label>
+<select name="cliente_id" class="form-select" required>
+<option value="">— Selecione ou crie cliente —</option>
+{% for c in clientes %}<option value="{{ c.pk }}">{{ c.nome }} {% if c.divida_total > 0 %}(deve R$ {{ c.divida_total|floatformat:2 }}){% endif %}</option>{% endfor %}
+</select>
+</div>
+<div class="form-group">
+<label>Descrição do Pedido</label>
+<textarea name="descricao" class="form-control" rows="3" required placeholder="Ex: 2 X-Burguer + 2 Refri..."></textarea>
+</div>
+<div class="grid grid-2">
+<div class="form-group">
+<label>Valor Total (R$)</label>
+<input type="number" name="total" class="form-control" step="0.01" min="0.01" required placeholder="0,00">
+</div>
+<div class="form-group">
+<label>Vencimento (opcional)</label>
+<input type="date" name="data_vencimento" class="form-control">
+</div>
+</div>
+<div class="form-group">
+<label>Observações</label>
+<input type="text" name="observacoes" class="form-control" placeholder="Alguma observação...">
+</div>
+<button type="submit" class="btn btn-primary w-100">💾 Registrar Fiado</button>
+</form>
+</div>
+</div>
+{% endblock %}

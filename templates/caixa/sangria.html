@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Sangria{% endblock %}
+{% block page_title %}💸 Registrar Sangria{% endblock %}
+{% block topbar_actions %}<a href="{% url 'caixa:lista' %}" class="btn btn-secondary">← Voltar</a>{% endblock %}
+{% block content %}
+<div style="max-width:400px">
+<div class="card">
+    <div class="card-title" style="margin-bottom:8px">Sangria de Caixa</div>
+    <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px">Registre a retirada de dinheiro do caixa (pagamento de fornecedor, despesas, etc.).</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>Valor da Retirada (R$)</label>
+            <input type="number" name="valor" class="form-control" step="0.01" min="0.01" required placeholder="0,00">
+        </div>
+        <div class="form-group">
+            <label>Motivo</label>
+            <input type="text" name="motivo" class="form-control" placeholder="Ex: pagamento de fornecedor, despesa...">
+        </div>
+        <button type="submit" class="btn btn-warning w-100" style="background:var(--warning)">💸 Registrar Sangria</button>
+    </form>
+</div>
+</div>
+{% endblock %}
