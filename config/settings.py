@@ -1,11 +1,12 @@
 """
 settings.py — Configurações do LanchoPro
 =========================================
-Preparado para funcionar em desenvolvimento (local) E produção (Railway)
-automaticamente, sem precisar mudar nada manualmente.
+Versão Final Otimizada para Railway (Produção)
 """
+import os
 from pathlib import Path
 from decouple import config
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -13,31 +14,26 @@ SECRET_KEY = config('SECRET_KEY', default='django-dev-key-troca-em-producao-1234
 DEBUG = config('DEBUG', default=True, cast=bool)
 
 # ============================================================
-# ALLOWED_HOSTS — Quais domínios podem acessar o sistema
+# HOSTS E SEGURANÇA CSRF (A CORREÇÃO DO SEU ERRO)
 # ============================================================
-# Em produção no Railway, o domínio é *.up.railway.app
-# Também aceita domínio customizado se você tiver um
-_raw_hosts = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,lanchonetepro-production.up.railway.app')
-ALLOWED_HOSTS = ['lanchonetepro-production.up.railway.app', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = [
+    'lanchonetepro-production.up.railway.app', 
+    'localhost', 
+    '127.0.0.1', 
+    '.up.railway.app'
+]
 
-# ============================================================
-# CSRF_TRUSTED_ORIGINS — A CORREÇÃO PRINCIPAL DO SEU ERRO
-# ============================================================
-# O Django 4+ exige que você liste explicitamente os domínios
-# que podem enviar formulários POST (com token CSRF).
-# Sem isso, qualquer POST de domínio externo é bloqueado com 403.
-#
-# Por que acontece no Railway?
-#   Você acessa: https://lanchonetepro-production.up.railway.app
-#   O Django vê que o Origin não está na lista → bloqueia.
-#
-# Solução: adicionar o domínio aqui (com https://)
-_raw_csrf = config(
-    'CSRF_TRUSTED_ORIGINS', 
-    default='http://localhost:8000,https://lanchonetepro-production.up.railway.app'
-)
+# O Django exige o protocolo https:// e o domínio exato para aceitar o POST
+CSRF_TRUSTED_ORIGINS = [
+    'https://lanchonetepro-production.up.railway.app',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000'
+]
 
-CSRF_TRUSTED_ORIGINS = ['https://lanchonetepro-production.up.railway.app']
+# Configurações essenciais para o Django entender o Proxy do Railway
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -91,17 +87,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # ============================================================
 # BANCO DE DADOS
 # ============================================================
-# Em produção (Railway com PostgreSQL), configure a variável
-# DATABASE_URL com a URL completa do banco PostgreSQL.
-# Sem ela, usa SQLite (bom para testes, não para produção real).
 _db_url = config('DATABASE_URL', default='')
 
 if _db_url:
-    # PostgreSQL em produção
-    import dj_database_url
     DATABASES = {'default': dj_database_url.parse(_db_url, conn_max_age=600)}
 else:
-    # SQLite local (desenvolvimento)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -122,7 +112,7 @@ USE_I18N = True
 USE_TZ = True
 
 # ============================================================
-# ARQUIVOS ESTÁTICOS (CSS, JS)
+# ARQUIVOS ESTÁTICOS (WHITENOISE)
 # ============================================================
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
@@ -157,9 +147,11 @@ LOGOUT_REDIRECT_URL = '/login/'
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 
 # ============================================================
-# SEGURANÇA EM PRODUÇÃO (ativa quando DEBUG=False)
+# CONFIGURAÇÕES ADICIONAIS DE SEGURANÇA PARA PRODUÇÃO
 # ============================================================
 if not DEBUG:
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
