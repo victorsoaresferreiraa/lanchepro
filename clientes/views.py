@@ -53,7 +53,7 @@ def registrar_pagamento(request, pk):
     conta = get_object_or_404(ContaAberta, pk=pk)
     if request.method == 'POST':
         valor = float(request.POST.get('valor', conta.total))
-        conta.valor_pago += valor
+        from decimal import Decimal; conta.valor_pago += Decimal(str(valor))
         if conta.valor_pago >= float(conta.total):
             conta.pago = True
             conta.status = 'PAGO'

@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}Relatórios{% endblock %}
+{% block page_title %}📊 Relatórios e Exportações{% endblock %}
+
+{% block extra_css %}
+<style>
+.export-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: border-color 0.2s;
+}
+.export-card:hover { border-color: var(--primary); }
+.export-icon { font-size: 36px; margin-bottom: 4px; }
+.export-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px; }
+.export-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+.date-form { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-top: 8px; }
+.date-form .form-group { margin: 0; flex: 1; min-width: 140px; }
+.preview-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.preview-row:last-child { border-bottom: none; }
+.heatmap { display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; margin-top: 8px; }
+.heatmap-cell { height: 28px; border-radius: 4px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 9px; color: var(--text-muted); cursor: pointer; transition: transform 0.1s; }
+.heatmap-cell:hover { transform: scaleY(1.2); }
+.heatmap-label { font-size: 9px; color: var(--text-muted); text-align: center; margin-top: 2px; }
+</style>
+{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'relatorios:excel' %}?inicio={{ inicio_mes|date:'Y-m-d' }}&fim={{ hoje|date:'Y-m-d' }}" 
+   class="btn btn-primary">⬇️ Baixar Excel do Mês</a>
+{% endblock %}
+
+{% block content %}
+
+<!-- CARDS RÁPIDOS -->
+<div class="grid grid-4" style="margin-bottom:20px">
+    <div class="metric-card orange">
+        <div class="metric-icon">💰</div>
+        <div class="metric-label">Vendas do Mês</div>
+        <div class="metric-value">R$ {{ vendas_mes.total|default:"0"|floatformat:2 }}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:6px">{{ vendas_mes.qtd|default:"0" }} transações</div>
+    </div>
+    <div class="metric-card red">
+        <div class="metric-icon">📋</div>
+        <div class="metric-label">Fiado em Aberto</div>
+        <div class="metric-value">R$ {{ total_fiado|floatformat:2 }}</div>
+    </div>
+    <div class="metric-card blue">
+        <div class="metric-icon">📦</div>
+        <div class="metric-label">Produtos Ativos</div>
+        <div class="metric-value">{{ total_produtos }}</div>
+        <div style="font-size:12px;color:var(--danger);margin-top:6px">{{ prod_baixo }} com estoque baixo</div>
+    </div>
+    <div class="metric-card green">
+        <div class="metric-icon">📊</div>
+        <div class="metric-label">Ticket Médio</div>
+        <div class="metric-value">
+            R$ {% if vendas_mes.qtd and vendas_mes.total %}
+                {% widthratio vendas_mes.total vendas_mes.qtd 1 %}
+            {% else %}0{% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- EXPORTAÇÕES -->
+<div style="margin-bottom:20px">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:16px;margin-bottom:14px">📥 Exportações</div>
+    <div class="grid grid-3">
+
+        <!-- Excel Completo -->
+        <div class="export-card">
+            <div class="export-icon">📗</div>
+            <div class="export-title">Relatório Excel Completo</div>
+            <div class="export-desc">6 abas: Resumo executivo, vendas detalhadas, top produtos, estoque, fiado e evolução diária com gráficos.</div>
+            <div class="date-form">
+                <div class="form-group">
+                    <label>Data Início</label>
+                    <input type="date" id="excel_inicio" class="form-control" value="{{ inicio_mes|date:'Y-m-d' }}">
+                </div>
+                <div class="form-group">
+                    <label>Data Fim</label>
+                    <input type="date" id="excel_fim" class="form-control" value="{{ hoje|date:'Y-m-d' }}">
+                </div>
+                <button onclick="downloadExcel()" class="btn btn-primary" style="white-space:nowrap">⬇️ Baixar</button>
+            </div>
+        </div>
+
+        <!-- Relatório de Caixa -->
+        <div class="export-card">
+            <div class="export-icon">💰</div>
+            <div class="export-title">Relatório de Caixa</div>
+            <div class="export-desc">Exporta movimentações de um caixa específico: abertura, vendas, sangrias e fechamento.</div>
+            <div class="form-group" style="margin-top:8px">
+                <label>Selecionar Caixa</label>
+                <select id="caixaSelecionado" class="form-select">
+                    <option value="">— Selecione —</option>
+                    {% for c in caixas_recentes %}
+                    <option value="{{ c.pk }}">{{ c.data_abertura|date:"d/m/Y" }} — {{ c.operador.username|default:"?" }} ({{ c.status }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button onclick="downloadCaixa()" class="btn btn-secondary">⬇️ Baixar Excel do Caixa</button>
+        </div>
+
+        <!-- Dicas de uso -->
+        <div class="export-card" style="background:rgba(255,107,44,0.05);border-color:rgba(255,107,44,0.2)">
+            <div class="export-icon">💡</div>
+            <div class="export-title">Como usar os relatórios</div>
+            <div class="export-desc" style="margin-top:4px">
+                <div style="margin-bottom:8px">📗 <strong>Excel Completo</strong> — Ideal para análise mensal, enviar ao contador ou gerente.</div>
+                <div style="margin-bottom:8px">💰 <strong>Caixa</strong> — Use ao final do dia para conferência do operador.</div>
+                <div style="margin-bottom:8px">📈 <strong>Evolução Diária</strong> — A aba do Excel tem gráfico de linha com tendência de vendas.</div>
+                <div>🏆 <strong>Top Produtos</strong> — Use para decidir o que comprar mais e o que tirar do cardápio.</div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- TOP 5 DO MÊS + CAIXAS RECENTES -->
+<div class="grid grid-2">
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">🏆 Top 5 Produtos — Este Mês</div>
+        </div>
+        {% for p in top5 %}
+        <div class="preview-row">
+            <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:24px;height:24px;border-radius:6px;background:{% if forloop.first %}rgba(243,156,18,.2){% else %}var(--bg3){% endif %};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:{% if forloop.first %}var(--warning){% else %}var(--text-muted){% endif %}">
+                    {{ forloop.counter }}
+                </div>
+                <div>
+                    <div style="font-size:13px;font-weight:500">{{ p.produto_nome }}</div>
+                    <div style="font-size:11px;color:var(--text-muted)">{{ p.qtd }} unidades vendidas</div>
+                </div>
+            </div>
+            <div style="text-align:right">
+                <div style="font-weight:700;color:var(--success);font-size:13px">R$ {{ p.receita|floatformat:2 }}</div>
+            </div>
+        </div>
+        {% empty %}
+        <div style="text-align:center;padding:30px;color:var(--text-muted)">Sem vendas este mês ainda.</div>
+        {% endfor %}
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">💰 Últimos Caixas</div>
+        </div>
+        {% for c in caixas_recentes %}
+        <div class="preview-row">
+            <div>
+                <div style="font-size:13px;font-weight:500">{{ c.data_abertura|date:"d/m/Y" }}</div>
+                <div style="font-size:11px;color:var(--text-muted)">{{ c.operador.username|default:"—" }} — {{ c.status }}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+                <div style="text-align:right">
+                    <div style="font-size:13px;font-weight:700;color:var(--success)">R$ {{ c.valor_vendas|floatformat:2 }}</div>
+                    <div style="font-size:10px;color:var(--text-muted)">em vendas</div>
+                </div>
+                <a href="{% url 'relatorios:caixa_excel' c.pk %}" class="btn btn-secondary btn-sm" title="Baixar Excel">📥</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function downloadExcel() {
+    const ini = document.getElementById('excel_inicio').value;
+    const fim = document.getElementById('excel_fim').value;
+    if (!ini || !fim) { alert('Selecione as datas!'); return; }
+    window.location.href = `/relatorios/excel/?inicio=${ini}&fim=${fim}`;
+}
+
+function downloadCaixa() {
+    const id = document.getElementById('caixaSelecionado').value;
+    if (!id) { alert('Selecione um caixa!'); return; }
+    window.location.href = `/relatorios/caixa/${id}/excel/`;
+}
+</script>
+{% endblock %}

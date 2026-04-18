@@ -1,3 +1,9 @@
+"""
+settings.py — Configurações do LanchoPro
+=========================================
+Preparado para funcionar em desenvolvimento (local) E produção (Railway)
+automaticamente, sem precisar mudar nada manualmente.
+"""
 from pathlib import Path
 from decouple import config
 
@@ -5,7 +11,32 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY', default='django-dev-key-troca-em-producao-12345!')
 DEBUG = config('DEBUG', default=True, cast=bool)
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
+
+# ============================================================
+# ALLOWED_HOSTS — Quais domínios podem acessar o sistema
+# ============================================================
+# Em produção no Railway, o domínio é *.up.railway.app
+# Também aceita domínio customizado se você tiver um
+_raw_hosts = config('https://lanchonetepro-production.up.railway.app/login/?next=/dashboard/', default='localhost,127.0.0.1')
+ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(',') if h.strip()]
+
+# ============================================================
+# CSRF_TRUSTED_ORIGINS — A CORREÇÃO PRINCIPAL DO SEU ERRO
+# ============================================================
+# O Django 4+ exige que você liste explicitamente os domínios
+# que podem enviar formulários POST (com token CSRF).
+# Sem isso, qualquer POST de domínio externo é bloqueado com 403.
+#
+# Por que acontece no Railway?
+#   Você acessa: https://lanchonetepro-production.up.railway.app
+#   O Django vê que o Origin não está na lista → bloqueia.
+#
+# Solução: adicionar o domínio aqui (com https://)
+_raw_csrf = config(
+    'CSRF_TRUSTED_ORIGINS',
+    default='http://localhost:8000,http://127.0.0.1:8000'
+)
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in _raw_csrf.split(',') if o.strip()]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -21,6 +52,7 @@ INSTALLED_APPS = [
     'caixa',
     'clientes',
     'dashboard',
+    'relatorios',
 ]
 
 MIDDLEWARE = [
@@ -55,12 +87,26 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'data' / 'lanchonete.db',
+# ============================================================
+# BANCO DE DADOS
+# ============================================================
+# Em produção (Railway com PostgreSQL), configure a variável
+# DATABASE_URL com a URL completa do banco PostgreSQL.
+# Sem ela, usa SQLite (bom para testes, não para produção real).
+_db_url = config('DATABASE_URL', default='')
+
+if _db_url:
+    # PostgreSQL em produção
+    import dj_database_url
+    DATABASES = {'default': dj_database_url.parse(_db_url, conn_max_age=600)}
+else:
+    # SQLite local (desenvolvimento)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'data' / 'lanchonete.db',
+        }
     }
-}
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -74,9 +120,13 @@ TIME_ZONE = 'America/Sao_Paulo'
 USE_I18N = True
 USE_TZ = True
 
+# ============================================================
+# ARQUIVOS ESTÁTICOS (CSS, JS)
+# ============================================================
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -105,14 +155,10 @@ LOGOUT_REDIRECT_URL = '/login/'
 
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 
-CSRF_TRUSTED_ORIGINS = [
-    'https://lanchonetepro-production.up.railway.app',
-]
-
-ALLOWED_HOSTS = [
-    'lanchonetepro-production.up.railway.app',
-    'localhost',
-    '127.0.0.1',
-]
-
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# ============================================================
+# SEGURANÇA EM PRODUÇÃO (ativa quando DEBUG=False)
+# ============================================================
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True

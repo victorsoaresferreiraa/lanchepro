@@ -505,6 +505,9 @@
             <a href="{% url 'vendas:historico' %}" class="nav-item {% if 'historico' in request.path %}active{% endif %}">
                 <span class="icon">📋</span> Histórico de Vendas
             </a>
+            <a href="{% url 'relatorios:painel' %}" class="nav-item {% if request.resolver_match.app_name == 'relatorios' %}active{% endif %}">
+                <span class="icon">📈</span> Relatórios / Excel
+            </a>
         </div>
     </nav>
 

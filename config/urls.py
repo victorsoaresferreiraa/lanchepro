@@ -34,6 +34,7 @@ urlpatterns = [
     path('api/caixa/', include('caixa.api_urls')),
     path('api/clientes/', include('clientes.api_urls')),
     path('api/dashboard/', include('dashboard.api_urls')),
+    path('relatorios/', include('relatorios.urls')),
 ]
 
 # Em desenvolvimento, serve arquivos de mídia (fotos de produtos etc)
