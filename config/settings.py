@@ -26,6 +26,7 @@ ALLOWED_HOSTS = [
 # O Django exige o protocolo https:// e o domínio exato para aceitar o POST
 CSRF_TRUSTED_ORIGINS = [
     'https://lanchonetepro-production.up.railway.app',
+    'https://*.up.railway.app',  # <-- Adicione esta linha (o coringa)
     'http://localhost:8000',
     'http://127.0.0.1:8000'
 ]
@@ -152,6 +153,6 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
+    SECURE_SSL_REDIRECT = False
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
