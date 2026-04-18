@@ -17,7 +17,7 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 # ============================================================
 # Em produção no Railway, o domínio é *.up.railway.app
 # Também aceita domínio customizado se você tiver um
-_raw_hosts = config('https://lanchonetepro-production.up.railway.app/login/?next=/dashboard/', default='localhost,127.0.0.1')
+_raw_hosts = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,lanchonetepro-production.up.railway.app')
 ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(',') if h.strip()]
 
 # ============================================================
@@ -33,9 +33,10 @@ ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(',') if h.strip()]
 #
 # Solução: adicionar o domínio aqui (com https://)
 _raw_csrf = config(
-    'CSRF_TRUSTED_ORIGINS',
-    default='http://localhost:8000,http://127.0.0.1:8000'
+    'CSRF_TRUSTED_ORIGINS', 
+    default='http://localhost:8000,https://lanchonetepro-production.up.railway.app'
 )
+
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in _raw_csrf.split(',') if o.strip()]
 
 INSTALLED_APPS = [
