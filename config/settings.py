@@ -104,3 +104,15 @@ LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/login/'
 
 CORS_ALLOW_ALL_ORIGINS = DEBUG
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://lanchonetepro-production.up.railway.app',
+]
+
+ALLOWED_HOSTS = [
+    'lanchonetepro-production.up.railway.app',
+    'localhost',
+    '127.0.0.1',
+]
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
