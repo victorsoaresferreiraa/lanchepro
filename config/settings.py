@@ -18,7 +18,7 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 # Em produção no Railway, o domínio é *.up.railway.app
 # Também aceita domínio customizado se você tiver um
 _raw_hosts = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,lanchonetepro-production.up.railway.app')
-ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(',') if h.strip()]
+ALLOWED_HOSTS = ['lanchonetepro-production.up.railway.app', 'localhost', '127.0.0.1']
 
 # ============================================================
 # CSRF_TRUSTED_ORIGINS — A CORREÇÃO PRINCIPAL DO SEU ERRO
@@ -37,7 +37,7 @@ _raw_csrf = config(
     default='http://localhost:8000,https://lanchonetepro-production.up.railway.app'
 )
 
-CSRF_TRUSTED_ORIGINS = [o.strip() for o in _raw_csrf.split(',') if o.strip()]
+CSRF_TRUSTED_ORIGINS = ['https://lanchonetepro-production.up.railway.app']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
